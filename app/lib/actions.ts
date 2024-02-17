@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 
 const FormSchema = z.object({
   id: z.string(),
@@ -60,8 +62,8 @@ export async function createInvoice(prevState: State, formData: FormData) {
           message: 'Lo siento!, error al crear la factura. '
       };
   }
-  revalidatePath('/dashboard/invoices');
-  redirect('/dashboard/invoices');
+  revalidatePath('/Dashboard/invoices');
+  redirect('/Dashboard/invoices');
 }
 
 export async function updateInvoice(
@@ -95,8 +97,8 @@ export async function updateInvoice(
     return { message: 'Database Error: Failed to Update Invoice.' };
   }
  
-  revalidatePath('/dashboard/invoices');
-  redirect('/dashboard/invoices');
+  revalidatePath('/Dashboard/invoices');
+  redirect('/Dashboard/invoices');
 }
 
 
@@ -110,6 +112,24 @@ export async function deleteInvoice(id: string) {
       return {
           massage: 'error de bd: Fallo para eliminar este registro.'
       }
+  }
+}
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn('credentials', formData);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Invalid credentials.';
+        default:
+          return 'Something went wrong.';
+      }
+    }
+    throw error;
   }
 }
 
